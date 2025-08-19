@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Captive Portal - Lab Access</title>
+  <style>
+    body {
+      background-color: #000;
+      color: #00ff00;
+      font-family: 'Courier New', Courier, monospace;
+      margin: 0;
+      padding: 2rem;
+    }
+
+    .terminal {
+      max-width: 800px;
+      margin: auto;
+      border: 2px solid #00ff00;
+      padding: 1rem;
+      box-shadow: 0 0 20px #00ff00;
+      background: rgba(0, 0, 0, 0.85);
+    }
+
+    .scanlines {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(0, 255, 0, 0.05),
+        rgba(0, 255, 0, 0.05) 1px,
+        transparent 1px,
+        transparent 2px
+      );
+      pointer-events: none;
+    }
+
+    .glitch {
+      animation: glitch 1s infinite;
+      color: red;
+    }
+
+    @keyframes glitch {
+      0% { text-shadow: 2px 0 red, -2px 0 blue; }
+      50% { text-shadow: -2px 0 red, 2px 0 blue; }
+      100% { text-shadow: 2px 0 red, -2px 0 blue; }
+    }
+
+    .skull {
+      font-size: 3rem;
+      color: red;
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    .form-group {
+      margin-top: 1.5rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: #ff0000;
+    }
+
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: 0.5rem;
+      background-color: #111;
+      border: 1px solid #ff0000;
+      color: #00ff00;
+      font-family: 'Courier New', Courier, monospace;
+    }
+
+    button {
+      margin-top: 1rem;
+      padding: 0.5rem 1rem;
+      background-color: #ff0000;
+      color: #fff;
+      border: none;
+      font-family: 'Courier New', Courier, monospace;
+      cursor: pointer;
+      box-shadow: 0 0 10px red;
+    }
+
+    button:hover {
+      background-color: #cc0000;
+    }
+  </style>
+</head>
+<body>
+  <div class="scanlines"></div>
+  <div class="terminal">
+    <div class="skull">☠️</div>
+    <h1 class="glitch">⚠️ Unauthorized Access Detected</h1>
+    <p>Initializing captive portal provisioning sequence...</p>
+    <p>SSID: <strong>ESP32_S3_LAB</strong></p>
+    <p>IP: <strong>192.168.4.1</strong></p>
+    <p>To continue, authenticate with your network credentials.</p>
+
+    <form method="POST" action="/provision">
+      <div class="form-group">
+        <label for="ssid">Enter Target Network SSID:</label>
+        <input type="text" id="ssid" name="ssid" required />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Enter Wi-Fi Password:</label>
+        <input type="password" id="password" name="password" required />
+      </div>
+
+      <button type="submit">Provision Wi-Fi</button>
+    </form>
+  </div>
+</body>
+</html>
