@@ -7,11 +7,17 @@ import socket
 import ure  # MicroPython regex, lighter than CPython's re
 
 http_running = True
+http_socket = None
 
+
+# In webserver.py
 def stop_http():
-    global http_running
+    global http_running, http_socket
     http_running = False
-    print("[HTTP] Stop signal received.")
+    if http_socket:
+        http_socket.close()
+        http_socket = None
+        print("[HTTP] Server stopped.")
 
 def load_html():
     # Load index.html from filesystem
@@ -75,14 +81,13 @@ def save_credentials(ssid, password):
         print("[HTTP] Failed to save credentials:", e)
 
 def start_http(provision_callback=None):
-    global http_running
-    http_running = True
+    global http_socket
+    http_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    http_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    http_socket.bind(('0.0.0.0', 80))
+    http_socket.listen(5)
+    http_socket.settimeout(5)
 
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    s.bind(('0.0.0.0', 80))
-    s.listen(5)
-    s.settimeout(5)
 
     print("[HTTP] Web server started on port 80")
 
@@ -108,7 +113,7 @@ def start_http(provision_callback=None):
             if e.args[0] != 116:
                 print("[HTTP] Socket error:", e)
 
-    s.close()
+    http_socket.close()
     print("[HTTP] Server stopped.")
 
 
@@ -150,3 +155,4 @@ def start_sta_server(preferred_port=80, fallback_port=8080):
             print('[STA-SERVER] Error:', e)
         finally:
             cl.close()
+
