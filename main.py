@@ -9,11 +9,12 @@ import machine        # Optional LED indicators
 import webserver
 import accessPoint
 import dns_hijack
+import gc
 
 # ---------- CONFIG ----------
 WIFI_TIMEOUT = 10               # Seconds to try connecting before fallback
 CREDS_FILE = "wifi_credentials.txt"
-AP_SSID = "ESP32_LAB"            # AP name during provisioning
+AP_SSID = "Free Non sus wifi"            # AP name during provisioning
 AP_PASSWORD = "hacktheplanet"    # WPA2 password for AP
 
 # ---------- LED HELPERS ----------
@@ -52,6 +53,11 @@ def status_success():
 
 def status_error():
     pulse_color(255, 0, 0, times=6, delay=0.15)  # Red pulse
+    
+def status_waiting():
+    pulse_color(0, 128, 128, times=4, delay=0.3)  # Soft cyan pulse
+    set_color(0,128,128)
+
 
 
 
@@ -62,6 +68,7 @@ def load_credentials():
     Returns (ssid, password) or (None, None) if not found/invalid.
     """
     try:
+        status_connecting()
         creds = {}
         with open(CREDS_FILE, "r") as f:
             for line in f:
@@ -88,6 +95,7 @@ def connect_to_wifi(ssid, password, timeout=WIFI_TIMEOUT):
     Returns True if connected, False otherwise.
     """
     print(f"[WIFI] Connecting to SSID: {ssid}")
+    status_connecting()
 
     # Explicit STA/AP references
     wlan_sta = network.WLAN(network.STA_IF)
@@ -105,13 +113,13 @@ def connect_to_wifi(ssid, password, timeout=WIFI_TIMEOUT):
     for _ in range(timeout * 2):  # check every 0.5s
         if wlan_sta.isconnected():
             print("[WIFI] Connected! IP config:", wlan_sta.ifconfig())
-            led_on()
+            status_success()
             return True
         time.sleep(0.5)
 
     print("[WIFI] Connection failed.")
     wlan_sta.disconnect()
-    led_blink(5, 0.1)
+    status_error()
     return False
 
 # ---------- PROVISIONING FLOW ----------
@@ -121,6 +129,7 @@ def start_provisioning():
     Blocks until device is provisioned or reset.
     """
     ap = accessPoint.start_access_point(AP_SSID, AP_PASSWORD)
+    status_waiting()
 
     # Start DNS hijack server in a separate thread
     try:
@@ -144,26 +153,33 @@ def provision_and_connect(ssid=None, password=None):
 
     
 def shutdown_captive_portal():
-    import gc
     wlan_ap = network.WLAN(network.AP_IF)
     wlan_ap.active(False)
     print("[PORTAL] Captive portal disabled")
 
-    # Optional: stop DNS and HTTP servers if you have handles
-    # e.g., dns_hijack.stop(), webserver.stop()
+    try:
+        dns_hijack.stop_dns_server()
+        webserver.stop_http()
+    except Exception as e:
+        print("[PORTAL] Error during shutdown:", e)
 
     gc.collect()
 
 
-# ---------- BOOT SEQUENCE ----------
 def main():
     ssid, password = load_credentials()
     if ssid:
         print(f"[BOOT] Found saved creds for {ssid}. Trying to connect...")
-        if not connect_to_wifi(ssid, password):
+        if connect_to_wifi(ssid, password):
+            print("[BOOT] Connected successfully. Launching STA success server...")
+            webserver.start_sta_server()
+        else:
+            print("[BOOT] Connection failed. Starting provisioning...")
             start_provisioning()
     else:
+        print("[BOOT] No saved credentials. Starting provisioning...")
         start_provisioning()
+
 
 # ---------- ENTRY POINT ----------
 if __name__ == "__main__":
@@ -175,3 +191,4 @@ if __name__ == "__main__":
     except Exception as e:
         print("[SYS] Unhandled error:", e)
         start_provisioning()
+
