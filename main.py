@@ -1,5 +1,7 @@
 # main.py
 # ESP32 Wi-Fi Provisioning with Captive Portal, Access Point & DNS Hijack
+#Be sure to show my YouTube some love! https://www.youtube.com/@Jones_In_WV
+# Support your dev with a cup of coffee? CashApp Caseyofttown
 
 import network
 import time
@@ -191,4 +193,5 @@ if __name__ == "__main__":
     except Exception as e:
         print("[SYS] Unhandled error:", e)
         start_provisioning()
+
 
